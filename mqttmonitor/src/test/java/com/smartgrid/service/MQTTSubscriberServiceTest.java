@@ -25,7 +25,7 @@ class MQTTSubscriberServiceTest {
         // Suplantamos comportamiento MQTT
         MqttMessage mensaje = new MqttMessage("tv:3500".getBytes());
 
-        MQTTSubscriberService service = new MQTTSubscriberService();
+        MQTTSubscriberService service = new MQTTSubscriberService(mockEngine);
 
         // Simular directamente la lógica de recepción (ya que init requiere broker real)
         service.init(); // Si lo deseas puedes mockearlo, aquí solo para estructura
@@ -36,7 +36,25 @@ class MQTTSubscriberServiceTest {
         verify(mockEngine, times(1)).procesarConsumo("tv", 3500);
     }
 
-    //⚠️ Este test es más estructural/sintético porque init() intenta conectarse al broker.
-    // Si quieres test real con broker local, necesitas levantar Mosquitto en localhost o en Docker
-    // (eso sería ya un test de integración real).
+    @Test
+    void testProcesarMensaje_Valido() {
+        SmartGridDecisionEngine mockIa = mock(SmartGridDecisionEngine.class);
+        MQTTSubscriberService service = new MQTTSubscriberService(mockIa);
+
+        service.procesarMensaje("lavadora:2100");
+
+        verify(mockIa, times(1)).procesarConsumo("lavadora", 2100.0);
+    }
+
+
+    @Test
+    void testProcesarMensaje_Invalido() {
+        SmartGridDecisionEngine mockIa = mock(SmartGridDecisionEngine.class);
+        MQTTSubscriberService service = new MQTTSubscriberService(mockIa);
+
+        service.procesarMensaje("invalido_sin_dos_partes");
+
+        verify(mockIa, never()).procesarConsumo(any(), anyDouble());
+    }
+
 }

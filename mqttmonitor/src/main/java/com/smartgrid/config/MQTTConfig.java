@@ -17,8 +17,8 @@ public class MQTTConfig {
      * @return una instancia de MQTTSubscriberService
      */
     @Bean
-    public MQTTSubscriberService mqttSubscriberService() {
-        return new MQTTSubscriberService();
+    public MQTTSubscriberService mqttSubscriberService(SmartGridDecisionEngine ia) {
+        return new MQTTSubscriberService(ia);
     }
 
     /**

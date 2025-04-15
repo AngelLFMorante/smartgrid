@@ -26,7 +26,11 @@ public class MQTTSubscriberService {
     private MqttClient client;
 
     // Motor de decisiones (IA simulada)
-    private final SmartGridDecisionEngine ia = new SmartGridDecisionEngine();
+    private final SmartGridDecisionEngine ia;
+
+    public MQTTSubscriberService(SmartGridDecisionEngine ia) {
+        this.ia = ia;
+    }
 
     /**
      * Inicializa la conexión MQTT y se suscribe al topic indicado.
@@ -41,17 +45,9 @@ public class MQTTSubscriberService {
 
             // Suscripción al topic
             client.subscribe(TOPIC, (topic, msg) -> {
-                String payload = new String(msg.getPayload());
-                log.info("⚡ Mensaje recibido: {}", payload);
-
-                // Esperamos mensajes tipo: "lavadora:2000"
-                String[] partes = payload.split(":");
-                if (partes.length == 2) {
-                    String dispositivo = partes[0];
-                    double consumo = Double.parseDouble(partes[1]);
-                    ia.procesarConsumo(dispositivo, consumo);
-                }
+                procesarMensaje(new String(msg.getPayload()));
             });
+
 
             log.info("✅ Suscrito a MQTT broker en '{}', topic '{}'", BROKER_URL, TOPIC);
 
@@ -59,4 +55,15 @@ public class MQTTSubscriberService {
             log.error("❌ Error al conectar con MQTT Broker: {}", e.getMessage(), e);
         }
     }
+
+    public void procesarMensaje(String payload) {
+        log.info("⚡ Mensaje recibido: {}", payload);
+        String[] partes = payload.split(":");
+        if (partes.length == 2) {
+            String dispositivo = partes[0];
+            double consumo = Double.parseDouble(partes[1]);
+            ia.procesarConsumo(dispositivo, consumo);
+        }
+    }
+
 }

@@ -7,32 +7,49 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jakarta.annotation.PostConstruct;
+import com.smartgrid.logic.SmartGridDecisionEngine;
 
+/**
+ * Servicio que se suscribe a un topic MQTT para recibir información de sensores.
+ */
 public class MQTTSubscriberService {
 
     private static final Logger log = LoggerFactory.getLogger(MQTTSubscriberService.class);
-    private static final String BROKER_URL = "tcp://test.mosquitto.org:1883"; // puedes cambiar por uno privado
+
+    // Dirección del broker MQTT
+    private static final String BROKER_URL = "tcp://test.mosquitto.org:1883";
+    // ID del cliente para esta conexión
     private static final String CLIENT_ID = "java-smartgrid-subscriber";
+    // Topic donde se publican los consumos
     private static final String TOPIC = "smartgrid/consumption";
 
     private MqttClient client;
 
+    // Motor de decisiones (IA simulada)
+    private final SmartGridDecisionEngine ia = new SmartGridDecisionEngine();
+
+    /**
+     * Inicializa la conexión MQTT y se suscribe al topic indicado.
+     */
     @PostConstruct
     public void init() {
         try {
             client = new MqttClient(BROKER_URL, CLIENT_ID);
             MqttConnectOptions options = new MqttConnectOptions();
-            options.setCleanSession(true);
+            options.setCleanSession(true); // No mantiene estado entre sesiones
             client.connect(options);
 
+            // Suscripción al topic
             client.subscribe(TOPIC, (topic, msg) -> {
                 String payload = new String(msg.getPayload());
                 log.info("⚡ Mensaje recibido: {}", payload);
 
-                double consumo = Double.parseDouble(payload);
-                if (consumo > 3000) {
-                    log.warn("⚠️ Exceso de consumo detectado: {}W - Simulando apagado automático", consumo);
-                    // Aquí puedes simular lógica para apagar el dispositivo
+                // Esperamos mensajes tipo: "lavadora:2000"
+                String[] partes = payload.split(":");
+                if (partes.length == 2) {
+                    String dispositivo = partes[0];
+                    double consumo = Double.parseDouble(partes[1]);
+                    ia.procesarConsumo(dispositivo, consumo);
                 }
             });
 

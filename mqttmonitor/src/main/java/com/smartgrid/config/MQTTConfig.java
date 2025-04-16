@@ -1,6 +1,7 @@
 package com.smartgrid.config;
 
 import com.smartgrid.logic.SmartGridDecisionEngine;
+import com.smartgrid.repository.DispositivoRepository;
 import com.smartgrid.service.MQTTSubscriberService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,8 +18,8 @@ public class MQTTConfig {
      * @return una instancia de MQTTSubscriberService
      */
     @Bean
-    public MQTTSubscriberService mqttSubscriberService(SmartGridDecisionEngine ia) {
-        return new MQTTSubscriberService(ia);
+    public MQTTSubscriberService mqttSubscriberService(SmartGridDecisionEngine ia, DispositivoRepository repository) {
+        return new MQTTSubscriberService(ia, repository);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.smartgrid.logic;
 
+import com.smartgrid.model.Dispositivo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +19,25 @@ public class SmartGridDecisionEngine {
     private static final double CONSUMO_MAXIMO_PERMITIDO = 5000.0;
 
     /** Almacena el consumo actual de cada dispositivo. */
-    private final Map<String, Double> dispositivos = new HashMap<>();
+    private final Map<String, Dispositivo> dispositivos = new HashMap<>();
+
+    public void procesarDispositivo(Dispositivo dispositivo) {
+        dispositivos.put(dispositivo.getNombre(), dispositivo);
+
+        double total = dispositivos.values().stream().mapToDouble(Dispositivo::getConsumo).sum();
+        log.info("🔍 Consumo total actual: {}W", total);
+
+        if (total > CONSUMO_MAXIMO_PERMITIDO) {
+            dispositivos.values().stream()
+                    .filter(d -> d.getCriticidad() != Dispositivo.Criticidad.CRITICA)
+                    .sorted((a, b) -> Double.compare(b.getConsumo(), a.getConsumo()))
+                    .findFirst()
+                    .ifPresent(d -> {
+                        log.warn("⚠️ Superado umbral. Apagando '{}'", d.getNombre());
+                        dispositivos.remove(d.getNombre());
+                    });
+        }
+    }
 
     /**
      * Procesa el consumo de un dispositivo.
@@ -27,7 +46,7 @@ public class SmartGridDecisionEngine {
      * @param dispositivo nombre del dispositivo
      * @param consumoWatts cantidad de consumo reportado en watts
      */
-    public void procesarConsumo(String dispositivo, double consumoWatts) {
+    /*public void procesarConsumo(String dispositivo, double consumoWatts) {
         dispositivos.put(dispositivo, consumoWatts);
 
         double total = dispositivos.values().stream()
@@ -50,14 +69,14 @@ public class SmartGridDecisionEngine {
                 dispositivos.remove(aApagar); // Simulamos el apagado
             }
         }
-    }
+    }*/
 
     /**
      * Devuelve los dispositivos actualmente activos.
      *
      * @return mapa de dispositivos y su consumo
      */
-    public Map<String, Double> getDispositivosActivos() {
+    public Map<String, Dispositivo> getDispositivosActivos() {
         return dispositivos;
     }
 }

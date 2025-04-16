@@ -1,5 +1,6 @@
 package com.smartgrid.service;
 
+import com.smartgrid.repository.DispositivoRepository;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import jakarta.annotation.PostConstruct;
 import com.smartgrid.logic.SmartGridDecisionEngine;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Servicio que se suscribe a un topic MQTT para recibir información de sensores.
@@ -28,8 +30,11 @@ public class MQTTSubscriberService {
     // Motor de decisiones (IA simulada)
     private final SmartGridDecisionEngine ia;
 
-    public MQTTSubscriberService(SmartGridDecisionEngine ia) {
+    private final DispositivoRepository dispositivoRepository;
+
+    public MQTTSubscriberService(SmartGridDecisionEngine ia, DispositivoRepository dispositivoRepository) {
         this.ia = ia;
+        this.dispositivoRepository = dispositivoRepository;
     }
 
     /**
@@ -56,7 +61,21 @@ public class MQTTSubscriberService {
         }
     }
 
+
     public void procesarMensaje(String payload) {
+        String[] partes = payload.split(":");
+        if (partes.length == 2) {
+            String nombre = partes[0];
+            double consumo = Double.parseDouble(partes[1]);
+
+            dispositivoRepository.findByNombre(nombre).ifPresentOrElse(dispositivo -> {
+                dispositivo.setConsumo(consumo);
+                ia.procesarDispositivo(dispositivo);
+            }, () -> log.warn("❌ Dispositivo no registrado en DB: {}", nombre));
+        }
+    }
+
+    /*public void procesarMensaje(String payload) {
         log.info("⚡ Mensaje recibido: {}", payload);
         String[] partes = payload.split(":");
         if (partes.length == 2) {
@@ -64,6 +83,6 @@ public class MQTTSubscriberService {
             double consumo = Double.parseDouble(partes[1]);
             ia.procesarConsumo(dispositivo, consumo);
         }
-    }
+    }*/
 
 }

@@ -24,6 +24,9 @@ public class Dispositivo {
     @Enumerated(EnumType.STRING)
     private Criticidad criticidad;
 
+    private NivelCriticidad criticidad;
+
+
     /**
      * Consumo actual del dispositivo (en Watts).
      * Marcado como @Transient porque no se guarda en la base de datos.
@@ -79,4 +82,13 @@ public class Dispositivo {
     public void setConsumo(double consumo) {
         this.consumo = consumo;
     }
+
+    public NivelCriticidad getCriticidad() {
+        return criticidad;
+    }
+
+    public void setCriticidad(NivelCriticidad criticidad) {
+        this.criticidad = criticidad;
+    }
+
 }

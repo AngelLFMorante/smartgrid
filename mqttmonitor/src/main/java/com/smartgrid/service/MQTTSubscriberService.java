@@ -1,5 +1,6 @@
 package com.smartgrid.service;
 
+import com.smartgrid.config.MQTTConfig;
 import com.smartgrid.repository.DispositivoRepository;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -13,20 +14,17 @@ import org.slf4j.LoggerFactory;
 import jakarta.annotation.PostConstruct;
 import com.smartgrid.logic.SmartGridDecisionEngine;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * Servicio que se suscribe a un topic MQTT para recibir información de sensores.
  */
+@Service
 public class MQTTSubscriberService {
 
     private static final Logger log = LoggerFactory.getLogger(MQTTSubscriberService.class);
 
-    // Dirección del broker MQTT
-    private static final String BROKER_URL = "tcp://test.mosquitto.org:1883";
-    // ID del cliente para esta conexión
-    private static final String CLIENT_ID = "java-smartgrid-subscriber";
-    // Topic donde se publican los consumos
-    private static final String TOPIC = "smartgrid/consumption";
+    private final MQTTConfig mqttConfig; // Inyectado mediante el constructor
 
     private MqttClient client;
 
@@ -35,56 +33,41 @@ public class MQTTSubscriberService {
 
     private final DispositivoRepository dispositivoRepository;
 
-    public MQTTSubscriberService(SmartGridDecisionEngine ia, DispositivoRepository dispositivoRepository) {
+    private boolean alreadyInitialized = false;
+
+    @Autowired
+    public MQTTSubscriberService(MQTTConfig mqttConfig, SmartGridDecisionEngine ia, DispositivoRepository dispositivoRepository) {
+        this.mqttConfig = mqttConfig;
         this.ia = ia;
         this.dispositivoRepository = dispositivoRepository;
     }
 
     @PostConstruct
     public void init() {
+        if (alreadyInitialized) return;
+        alreadyInitialized = true;
+
         try {
-            client = new MqttClient(BROKER_URL, CLIENT_ID);
+            String brokerUrl = mqttConfig.getBrokerUrl();  // Configuración del broker
+            String clientId = mqttConfig.getClientId();    // Configuración del cliente
+            String topic = mqttConfig.getTopic();
+
+            client = new MqttClient(brokerUrl, clientId);
 
             MqttConnectOptions options = new MqttConnectOptions();
-            options.setCleanSession(true);
-            options.setKeepAliveInterval(30); // importante para mantener la sesión activa
+            options.setCleanSession(true);  // Inicia una sesión limpia
+            options.setKeepAliveInterval(30); // Mantiene la conexión viva por 30 segundos
 
-            // Configura el callback
-            client.setCallback(new MqttCallback() {
-                @Override
-                public void connectionLost(Throwable cause) {
-                    log.error("❌ Conexión MQTT perdida: {}", cause.getMessage());
-                    boolean reconnectado = false;
-                    while (!reconnectado) {
-                        try {
-                            Thread.sleep(5000); // espera 5 segundos antes de reintentar
-                            client.connect(); // intenta reconectar
-                            client.subscribe(TOPIC);
-                            reconnectado = true;
-                            log.info("🔁 Reconexion exitosa al MQTT broker.");
-                        } catch (Exception e) {
-                            log.warn("❌ Reintento fallido: {}", e.getMessage());
-                        }
-                    }
-                }
-
-                @Override
-                public void messageArrived(String topic, MqttMessage message) {
-                    String payload = new String(message.getPayload());
-                    log.info("⚡ Mensaje recibido: {}", payload);
-                    procesarMensaje(payload);
-                }
-
-                @Override
-                public void deliveryComplete(IMqttDeliveryToken token) {
-                    // No se utiliza en modo solo suscripción
-                }
+            // Intentamos conectar
+            client.connect(options);
+            client.subscribe(topic, (topicSus, msg) -> {
+                procesarMensaje(new String(msg.getPayload()));
             });
 
-            client.connect(options);
-            client.subscribe(TOPIC);
+            log.info("✅ Suscrito a MQTT broker en '{}', topic '{}'", brokerUrl, topic);
+            log.info("✅ Conexión exitosa al broker MQTT '{}'", brokerUrl);
 
-            log.info("✅ Suscrito a MQTT broker en '{}', topic '{}'", BROKER_URL, TOPIC);
+            // Aquí no hacemos ninguna suscripción ni callback, solo mantenemos la conexión abierta
 
         } catch (MqttException e) {
             log.error("❌ Error al conectar con MQTT Broker: {}", e.getMessage(), e);
@@ -105,55 +88,4 @@ public class MQTTSubscriberService {
             log.warn("❌ Formato de mensaje inválido: '{}'", payload);
         }
     }
-
-    /**
-     * Inicializa la conexión MQTT y se suscribe al topic indicado.
-     */
-   /* @PostConstruct
-    public void init() {
-        try {
-            client = new MqttClient(BROKER_URL, CLIENT_ID);
-            MqttConnectOptions options = new MqttConnectOptions();
-            options.setCleanSession(true); // No mantiene estado entre sesiones
-            client.connect(options);
-
-            // Suscripción al topic
-            client.subscribe(TOPIC, (topic, msg) -> {
-                procesarMensaje(new String(msg.getPayload()));
-            });
-
-
-            log.info("✅ Suscrito a MQTT broker en '{}', topic '{}'", BROKER_URL, TOPIC);
-
-        } catch (MqttException e) {
-            log.error("❌ Error al conectar con MQTT Broker: {}", e.getMessage(), e);
-        }
-    }
-
-    public void procesarMensaje(String payload) {
-        String[] partes = payload.split(":");
-        if (partes.length == 2) {
-            String nombre = partes[0].trim().toLowerCase(); // más robusto
-            double consumo = Double.parseDouble(partes[1]);
-
-            dispositivoRepository.findByNombre(nombre).ifPresentOrElse(dispositivo -> {
-                dispositivo.setConsumo(consumo);
-                ia.procesarDispositivo(dispositivo);
-            }, () -> log.warn("❌ Dispositivo desconocido '{}'. Debe ser registrado antes de usar.", nombre));
-        } else {
-            log.warn("❌ Formato de mensaje inválido: '{}'", payload);
-        }
-    }*/
-
-
-    /*public void procesarMensaje(String payload) {
-        log.info("⚡ Mensaje recibido: {}", payload);
-        String[] partes = payload.split(":");
-        if (partes.length == 2) {
-            String dispositivo = partes[0];
-            double consumo = Double.parseDouble(partes[1]);
-            ia.procesarConsumo(dispositivo, consumo);
-        }
-    }*/
-
 }

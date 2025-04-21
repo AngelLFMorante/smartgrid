@@ -1,34 +1,32 @@
 package com.smartgrid.config;
-
-import com.smartgrid.logic.SmartGridDecisionEngine;
-import com.smartgrid.repository.DispositivoRepository;
 import com.smartgrid.service.MQTTSubscriberService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
-/**
- * Configuración de beans relacionados con MQTT para inyección en Spring.
- */
-@Configuration
+@Component
 public class MQTTConfig {
 
-    /**
-     * Define el bean del servicio suscriptor MQTT para que Spring lo gestione.
-     *
-     * @return una instancia de MQTTSubscriberService
-     */
-    @Bean
-    public MQTTSubscriberService mqttSubscriberService(SmartGridDecisionEngine ia, DispositivoRepository repository) {
-        return new MQTTSubscriberService(ia, repository);
+    @Value("${mqtt.broker.url}")
+    private String brokerUrl;
+
+    @Value("${mqtt.topic}")
+    private String topic;
+
+    @Value("${mqtt.client.id}")
+    private String clientId;
+
+    public String getBrokerUrl() {
+        return brokerUrl;
     }
 
-    /**
-     *
-     * @return una instancia de SmartGridDecisionEngine
-     */
-    @Bean
-    public SmartGridDecisionEngine decisionEngine() {
-        return new SmartGridDecisionEngine();
+    public String getTopic() {
+        return topic;
+    }
+
+    public String getClientId() {
+        return clientId;
     }
 
 }
+

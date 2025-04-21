@@ -8,23 +8,33 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Simulación de motor de decisiones basado en consumo energético.
- * Si el consumo total excede un umbral, apaga el dispositivo que más consume.
+ * Motor de decisiones de la Smart Grid.
+ * Simula la lógica de gestión del consumo energético:
+ * si el consumo total supera un umbral, apaga el dispositivo menos crítico y más consumidor.
  */
 public class SmartGridDecisionEngine {
 
     private static final Logger log = LoggerFactory.getLogger(SmartGridDecisionEngine.class);
 
-    /** Límite máximo de consumo permitido (Watts). */
+    /** Umbral máximo de consumo energético (en vatios) permitido por el sistema. */
     private static final double CONSUMO_MAXIMO_PERMITIDO = 5000.0;
 
-    /** Almacena el consumo actual de cada dispositivo. */
+    /** Mapa que almacena los dispositivos activos por nombre. */
     private final Map<String, Dispositivo> dispositivos = new HashMap<>();
 
+    /**
+     * Procesa un dispositivo recibido desde MQTT, actualiza su consumo,
+     * evalúa el total y aplica lógica de desconexión si se excede el límite.
+     *
+     * @param dispositivo el dispositivo a procesar
+     */
     public void procesarDispositivo(Dispositivo dispositivo) {
         dispositivos.put(dispositivo.getNombre(), dispositivo);
 
-        double total = dispositivos.values().stream().mapToDouble(Dispositivo::getConsumo).sum();
+        double total = dispositivos.values().stream()
+                .mapToDouble(Dispositivo::getConsumo)
+                .sum();
+
         log.info("🔍 Consumo total actual: {}W", total);
 
         if (total > CONSUMO_MAXIMO_PERMITIDO) {
@@ -40,41 +50,9 @@ public class SmartGridDecisionEngine {
     }
 
     /**
-     * Procesa el consumo de un dispositivo.
-     * Si el total supera el límite, apaga el que más consume.
+     * Devuelve los dispositivos activos actualmente en memoria.
      *
-     * @param dispositivo nombre del dispositivo
-     * @param consumoWatts cantidad de consumo reportado en watts
-     */
-    /*public void procesarConsumo(String dispositivo, double consumoWatts) {
-        dispositivos.put(dispositivo, consumoWatts);
-
-        double total = dispositivos.values().stream()
-                .mapToDouble(Double::doubleValue)
-                .sum();
-
-        log.info("🔍 Consumo total actual: {}W", total);
-
-        // Verificamos si se supera el límite permitido
-        if (total > CONSUMO_MAXIMO_PERMITIDO) {
-            // Seleccionamos el dispositivo que más consume
-            String aApagar = dispositivos.entrySet().stream()
-                    .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                    .map(Map.Entry::getKey)
-                    .findFirst()
-                    .orElse(null);
-
-            if (aApagar != null) {
-                log.warn("⚠️ Superado el umbral. Apagando '{}'", aApagar);
-                dispositivos.remove(aApagar); // Simulamos el apagado
-            }
-        }
-    }*/
-
-    /**
-     * Devuelve los dispositivos actualmente activos.
-     *
-     * @return mapa de dispositivos y su consumo
+     * @return mapa de dispositivos por nombre
      */
     public Map<String, Dispositivo> getDispositivosActivos() {
         return dispositivos;

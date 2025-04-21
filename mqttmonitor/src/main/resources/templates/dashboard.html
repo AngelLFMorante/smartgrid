@@ -14,12 +14,16 @@
     <h2>Dispositivos activos</h2>
     <table>
         <tr>
-            <th>Dispositivo</th>
+            <th>Nombre</th>
+            <th>Zona</th>
+            <th>Criticidad</th>
             <th>Consumo (Watts)</th>
         </tr>
-        <tr th:each="entry : ${dispositivos}">
+        <tr th:each="entry : ${dispositivos.entrySet()}">
             <td th:text="${entry.key}"></td>
-            <td th:text="${entry.value}"></td>
+            <td th:text="${entry.value.zona}"></td>
+            <td th:text="${entry.value.criticidad}"></td>
+            <td th:text="${entry.value.consumo} + ' W'"></td>
         </tr>
     </table>
 </body>

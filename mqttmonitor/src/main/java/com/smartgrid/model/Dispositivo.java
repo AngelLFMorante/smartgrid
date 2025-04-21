@@ -1,14 +1,10 @@
 package com.smartgrid.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 
+/**
+ * Entidad JPA que representa un dispositivo de consumo energético.
+ */
 @Entity
 @Table(name = "dispositivos")
 public class Dispositivo {
@@ -18,17 +14,31 @@ public class Dispositivo {
     private Long id;
 
     private String nombre;
+
     private String zona;
 
+    /**
+     * Nivel de criticidad del dispositivo.
+     * Determina si puede o no ser desconectado automáticamente.
+     */
     @Enumerated(EnumType.STRING)
     private Criticidad criticidad;
 
-    @Transient // No se guarda, solo es temporal
+    /**
+     * Consumo actual del dispositivo (en Watts).
+     * Marcado como @Transient porque no se guarda en la base de datos.
+     */
+    @Transient
     private double consumo;
 
+    /**
+     * Niveles de criticidad posibles.
+     */
     public enum Criticidad {
         CRITICA, MEDIA, BAJA
     }
+
+    // --- Getters y Setters ---
 
     public Long getId() {
         return id;
@@ -70,4 +80,3 @@ public class Dispositivo {
         this.consumo = consumo;
     }
 }
-

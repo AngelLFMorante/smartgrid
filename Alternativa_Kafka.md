@@ -186,3 +186,9 @@ Todas las soluciones aquí listadas cuentan con soporte oficial o estable para s
 - Kafka sigue siendo superior para procesamiento complejo, eventos masivos, o replay.
 - Estas alternativas están pensadas para entornos controlados, privados o de menor escala.
 - Es posible migrar a Kafka en el futuro si el proyecto lo requiere.
+
+## 🤝 Autor
+
+Ángel Luis Fernández Morante  
+Desarrollador Backend Java  
+Plexus Tech

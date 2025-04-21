@@ -132,3 +132,9 @@ Se propone una arquitectura de **Microservicios con Hexagonal Architecture** (pu
 **Esta arquitectura está pensada para ser defendible, realizable y extensible.** Si hay cambios en el futuro, permite adaptar fácilmente la estructura sin reescribir todo.
 
 ❌ NO SE INCLUIRÁ PYTHON ❌ 
+
+## 🤝 Autor
+
+Ángel Luis Fernández Morante  
+Desarrollador Backend Java  
+Plexus Tech

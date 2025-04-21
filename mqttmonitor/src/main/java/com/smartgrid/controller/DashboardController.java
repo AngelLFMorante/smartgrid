@@ -6,7 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /**
- * Controlador web que maneja las peticiones a la vista principal.
+ * Controlador web principal que gestiona el acceso al dashboard de dispositivos.
  */
 @Controller
 public class DashboardController {
@@ -14,23 +14,23 @@ public class DashboardController {
     private final SmartGridDecisionEngine ia;
 
     /**
-     * Inyección del motor de decisiones.
+     * Constructor que recibe el motor de decisiones para poder acceder a los dispositivos activos.
      *
-     * @param ia instancia de SmartGridDecisionEngine
+     * @param ia instancia del motor de decisiones
      */
     public DashboardController(SmartGridDecisionEngine ia) {
         this.ia = ia;
     }
 
     /**
-     * Renderiza el dashboard principal con la lista de dispositivos activos.
+     * Mapea la raíz "/" para mostrar el dashboard.
+     * Se cargan los dispositivos activos y se pasan al modelo de la vista.
      *
-     * @param model modelo de datos Thymeleaf
-     * @return nombre de la plantilla Thymeleaf (dashboard.html)
+     * @param model objeto del modelo para Thymeleaf
+     * @return nombre del template Thymeleaf (dashboard.html)
      */
     @GetMapping("/")
     public String index(Model model) {
-        // Pasamos los dispositivos activos al frontend
         model.addAttribute("dispositivos", ia.getDispositivosActivos());
         return "dashboard";
     }

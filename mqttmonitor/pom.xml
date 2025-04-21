@@ -70,6 +70,13 @@
 			<version>1.2.5</version>
 		</dependency>
 
+		<!-- POSTGRESQL -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.7.3</version>
+		</dependency>
+
 		<!-- JPA -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

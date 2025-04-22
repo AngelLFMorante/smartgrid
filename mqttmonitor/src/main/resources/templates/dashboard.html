@@ -8,23 +8,45 @@
         table { border-collapse: collapse; width: 60%; }
         th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
         th { background-color: #f2f2f2; }
+
+        .alerta {
+            background-color: #ffdddd;
+            padding: 15px;
+            border: 1px solid red;
+            color: darkred;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <h2>Dispositivos activos</h2>
-    <table>
-        <tr>
-            <th>Nombre</th>
-            <th>Zona</th>
-            <th>Criticidad</th>
-            <th>Consumo (Watts)</th>
-        </tr>
-        <tr th:each="entry : ${dispositivos.entrySet()}">
-            <td th:text="${entry.key}"></td>
-            <td th:text="${entry.value.zona}"></td>
-            <td th:text="${entry.value.criticidad}"></td>
-            <td th:text="${entry.value.consumo} + ' W'"></td>
-        </tr>
-    </table>
+
+<!-- ⚠️ Aviso cuando todos los dispositivos activos son críticos -->
+<!--<div th:if="${alertaCriticos}" class="alerta">
+    🚨 Todos los dispositivos activos son críticos. No es posible reducir más el consumo automáticamente.<br/>
+    Por favor, revise manualmente los dispositivos conectados o active un plan de emergencia.
+</div>-->
+<div th:if="${alertaCriticos}" style="background-color: #ffe0e0; border: 1px solid #ff4d4d; padding: 15px; margin-bottom: 20px;">
+    🚨 <strong>¡Atención!</strong> El consumo energético ha superado el límite y todos los dispositivos activos son críticos.
+    Por favor, realiza una desconexión manual desde la <a href="/gestion">gestión manual</a>.
+</div>
+
+
+<h2>Dispositivos activos</h2>
+<table>
+    <tr>
+        <th>Nombre</th>
+        <th>Zona</th>
+        <th>Criticidad</th>
+        <th>Consumo (Watts)</th>
+    </tr>
+    <tr th:each="dispositivo : ${dispositivos}">
+        <td th:text="${dispositivo.nombre}"></td>
+        <td th:text="${dispositivo.zona}"></td>
+        <td th:text="${dispositivo.criticidad}"></td>
+        <td th:text="${dispositivo.consumo} + ' W'"></td>
+    </tr>
+</table>
+
 </body>
 </html>

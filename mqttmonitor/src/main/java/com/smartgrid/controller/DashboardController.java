@@ -4,9 +4,12 @@ import com.smartgrid.logic.SmartGridDecisionEngine;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * Controlador web principal que gestiona el acceso al dashboard de dispositivos.
+ * Controlador web que gestiona la visualización del dashboard principal
+ * y la gestión manual de dispositivos.
  */
 @Controller
 public class DashboardController {
@@ -14,7 +17,8 @@ public class DashboardController {
     private final SmartGridDecisionEngine ia;
 
     /**
-     * Constructor que recibe el motor de decisiones para poder acceder a los dispositivos activos.
+     * Constructor que recibe el motor de decisiones para interactuar
+     * con el estado energético actual y los dispositivos activos.
      *
      * @param ia instancia del motor de decisiones
      */
@@ -23,15 +27,42 @@ public class DashboardController {
     }
 
     /**
-     * Mapea la raíz "/" para mostrar el dashboard.
-     * Se cargan los dispositivos activos y se pasan al modelo de la vista.
+     * Muestra el dashboard principal con el estado actual de los dispositivos.
+     * Si se excede el límite energético y todos los dispositivos son críticos,
+     * se activa una alerta visible en la interfaz.
      *
-     * @param model objeto del modelo para Thymeleaf
+     * @param model modelo de datos para Thymeleaf
      * @return nombre del template Thymeleaf (dashboard.html)
      */
     @GetMapping("/")
     public String index(Model model) {
         model.addAttribute("dispositivos", ia.getDispositivosActivos());
+        model.addAttribute("alertaCriticos", ia.isAlertaCriticos());
         return "dashboard";
+    }
+
+    /**
+     * Muestra la página de gestión manual, donde se listan los dispositivos activos
+     * con opción de desconexión si no son críticos.
+     *
+     * @param model modelo de datos para Thymeleaf
+     * @return nombre del template Thymeleaf (gestion.html)
+     */
+    @GetMapping("/gestion")
+    public String gestionManual(Model model) {
+        model.addAttribute("dispositivos", ia.getDispositivosActivos());
+        return "gestion";
+    }
+
+    /**
+     * Permite desconectar un dispositivo manualmente desde la interfaz.
+     *
+     * @param nombre nombre del dispositivo a desconectar
+     * @return redirección a la página de gestión
+     */
+    @PostMapping("/desconectar")
+    public String desconectar(@RequestParam String nombre) {
+        ia.desconectarDispositivo(nombre);
+        return "redirect:/gestion";
     }
 }

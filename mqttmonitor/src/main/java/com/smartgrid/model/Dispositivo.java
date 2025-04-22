@@ -21,11 +21,7 @@ public class Dispositivo {
      * Nivel de criticidad del dispositivo.
      * Determina si puede o no ser desconectado automáticamente.
      */
-    @Enumerated(EnumType.STRING)
-    private Criticidad criticidad;
-
     private NivelCriticidad criticidad;
-
 
     /**
      * Consumo actual del dispositivo (en Watts).
@@ -34,15 +30,7 @@ public class Dispositivo {
     @Transient
     private double consumo;
 
-    /**
-     * Niveles de criticidad posibles.
-     */
-    public enum Criticidad {
-        CRITICA, MEDIA, BAJA
-    }
-
     // --- Getters y Setters ---
-
     public Long getId() {
         return id;
     }
@@ -65,14 +53,6 @@ public class Dispositivo {
 
     public void setZona(String zona) {
         this.zona = zona;
-    }
-
-    public Criticidad getCriticidad() {
-        return criticidad;
-    }
-
-    public void setCriticidad(Criticidad criticidad) {
-        this.criticidad = criticidad;
     }
 
     public double getConsumo() {

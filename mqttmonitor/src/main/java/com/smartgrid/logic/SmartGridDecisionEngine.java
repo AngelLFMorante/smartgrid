@@ -1,6 +1,7 @@
 package com.smartgrid.logic;
 
 import com.smartgrid.model.Dispositivo;
+import com.smartgrid.model.NivelCriticidad;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class SmartGridDecisionEngine {
 
         if (total > CONSUMO_MAXIMO_PERMITIDO) {
             dispositivos.values().stream()
-                    .filter(d -> d.getCriticidad() != Dispositivo.Criticidad.CRITICA)
+                    .filter(d -> d.getCriticidad() != NivelCriticidad.CRITICA)
                     .sorted((a, b) -> Double.compare(b.getConsumo(), a.getConsumo()))
                     .findFirst()
                     .ifPresent(d -> {

@@ -22,19 +22,20 @@
         <th>Consumo</th>
         <th>Acción</th>
     </tr>
-    <tr th:each="entry : ${dispositivos.entrySet()}">
-        <td th:text="${entry.key}"></td>
-        <td th:text="${entry.value.zona}"></td>
-        <td th:text="${entry.value.criticidad}"></td>
-        <td th:text="${entry.value.consumo} + ' W'"></td>
+    <tr th:each="dispositivo : ${dispositivos}">
+        <td th:text="${dispositivo.nombre}"></td>
+        <td th:text="${dispositivo.zona}"></td>
+        <td th:text="${dispositivo.criticidad}"></td>
+        <td th:text="${dispositivo.consumo} + ' W'"></td>
         <td>
-            <form th:action="@{/desconectar}" method="post" th:if="${entry.value.criticidad.name() != 'CRITICA'}">
-                <input type="hidden" name="nombre" th:value="${entry.key}" />
+            <form th:action="@{/desconectar}" method="post" th:if="${dispositivo.criticidad.name() != 'CRITICA'}">
+                <input type="hidden" name="nombre" th:value="${dispositivo.nombre}" />
                 <button type="submit">🔌 Apagar</button>
             </form>
-            <span th:if="${entry.value.criticidad.name() == 'CRITICA'}">No disponible</span>
+            <span th:if="${dispositivo.criticidad.name() == 'CRITICA'}">No disponible</span>
         </td>
     </tr>
+
 </table>
 
 <a href="/" style="text-decoration:none;">⬅️ Volver al Dashboard</a>

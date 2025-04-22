@@ -38,6 +38,8 @@ public class DashboardController {
     public String index(Model model) {
         model.addAttribute("dispositivos", ia.getDispositivosActivos());
         model.addAttribute("alertaCriticos", ia.isAlertaCriticos());
+        model.addAttribute("limitePermitido", ia.getLimiteConsumo());
+        model.addAttribute("totalActual", ia.getConsumoTotal());
         return "dashboard";
     }
 
@@ -51,6 +53,9 @@ public class DashboardController {
     @GetMapping("/gestion")
     public String gestionManual(Model model) {
         model.addAttribute("dispositivos", ia.getDispositivosActivos());
+        model.addAttribute("modoManual", true);
+        model.addAttribute("totalActual", ia.getConsumoTotal());
+        model.addAttribute("limitePermitido", ia.getLimiteConsumo());
         return "gestion";
     }
 
@@ -64,5 +69,23 @@ public class DashboardController {
     public String desconectar(@RequestParam String nombre) {
         ia.desconectarDispositivo(nombre);
         return "redirect:/gestion";
+    }
+
+    /**
+     * Permite ajustar la potencia de un dispositivo crítico.
+     * Si el consumo total sigue siendo mayor que el límite, no permitirá la salida.
+     *
+     * @param nombre     nombre del dispositivo
+     * @param nuevaPotencia nueva potencia que se desea asignar
+     * @return redirección a la página de gestión
+     */
+    @PostMapping("/ajustar-potencia")
+    public String ajustarPotencia(@RequestParam String nombre, @RequestParam double nuevaPotencia) {
+        boolean ajustado = ia.ajustarPotenciaDispositivo(nombre, nuevaPotencia);
+        if (ajustado) {
+            return "redirect:/gestion";
+        } else {
+            return "redirect:/gestion?error=No se pudo ajustar la potencia";
+        }
     }
 }

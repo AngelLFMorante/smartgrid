@@ -9,10 +9,24 @@
         th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
         th { background-color: #f2f2f2; }
         button { padding: 6px 12px; }
+        .alerta {
+            background-color: #ffe0e0;
+            padding: 15px;
+            border: 1px solid red;
+            color: darkred;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 <h2>Gestión Manual de Dispositivos</h2>
+
+<!-- ⚠️ Aviso si el límite de consumo está superado -->
+<div th:if="${modoManual and totalActual > limitePermitido}" class="alerta">
+    ⚠️ Has superado el límite de consumo permitido (máximo [[${limitePermitido}]]W).<br/>
+    Por favor, ajusta el consumo bajando o apagando dispositivos hasta estar dentro del límite.
+</div>
 
 <table>
     <tr>
@@ -28,16 +42,37 @@
         <td th:text="${dispositivo.criticidad}"></td>
         <td th:text="${dispositivo.consumo} + ' W'"></td>
         <td>
-            <form th:action="@{/desconectar}" method="post" th:if="${dispositivo.criticidad.name() != 'CRITICA'}">
+            <!-- 🔌 Apagar si no es crítico o si está permitido por exceso -->
+            <form th:action="@{/desconectar}" method="post"
+                  th:if="${dispositivo.criticidad.name() != 'CRITICA'
+                          or (modoManual and totalActual > limitePermitido)}">
                 <input type="hidden" name="nombre" th:value="${dispositivo.nombre}" />
                 <button type="submit">🔌 Apagar</button>
             </form>
-            <span th:if="${dispositivo.criticidad.name() == 'CRITICA'}">No disponible</span>
+
+            <!-- 🔧 Formulario para bajar potencia si es crítico y hay exceso -->
+            <form th:action="@{/ajustar-potencia}" method="post"
+                  th:if="${dispositivo.criticidad.name() == 'CRITICA' and modoManual and totalActual > limitePermitido}">
+                <input type="hidden" name="nombre" th:value="${dispositivo.nombre}" />
+                <input type="number" name="nuevaPotencia" min="1"
+                       th:placeholder="'Reducir de ' + ${dispositivo.consumo} + 'W'" />
+                <button type="submit">🔧 Bajar Consumo</button>
+            </form>
+
+            <!-- ❌ Si es crítico y no se puede actuar -->
+            <span th:if="${dispositivo.criticidad.name() == 'CRITICA'
+                          and (!modoManual or totalActual <= limitePermitido)}">
+                No disponible
+            </span>
         </td>
     </tr>
-
 </table>
 
-<a href="/" style="text-decoration:none;">⬅️ Volver al Dashboard</a>
+<!-- ⛔ Bloquear volver mientras se está fuera del límite -->
+<a href="/" th:if="${!modoManual or totalActual <= limitePermitido}" style="text-decoration:none;">⬅️ Volver al Dashboard</a>
+<span th:if="${modoManual and totalActual > limitePermitido}" style="color: red; font-weight: bold;">
+    ⚠️ No puedes salir hasta ajustar el consumo dentro del límite.
+</span>
+
 </body>
 </html>

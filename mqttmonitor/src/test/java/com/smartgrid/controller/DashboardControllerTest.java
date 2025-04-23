@@ -1,28 +1,69 @@
 package com.smartgrid.controller;
 
 import com.smartgrid.logic.SmartGridDecisionEngine;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.Model;
 
-import java.util.HashMap;
-
-import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-/*class DashboardControllerTest {
+public class DashboardControllerTest {
 
-    @Test
-    void testDashboardLoadsDataIntoModel() {
-        SmartGridDecisionEngine engine = mock(SmartGridDecisionEngine.class);
-        Model model = mock(Model.class);
+    private DashboardController controller;
+    private SmartGridDecisionEngine ia;
+    private Model model;
 
-        when(engine.getDispositivosActivos()).thenReturn(new HashMap<>());
-
-        DashboardController controller = new DashboardController(engine);
-        String view = controller.index(model);
-
-        assertEquals("dashboard", view);
-        verify(model).addAttribute(eq("dispositivos"), any());
+    @BeforeEach
+    public void setup() {
+        ia = mock(SmartGridDecisionEngine.class);
+        controller = new DashboardController(ia);
+        model = mock(Model.class);
     }
 
-}*/
+    @Test
+    public void testIndex() {
+        when(ia.getDispositivosActivos()).thenReturn(List.of());
+        when(ia.isAlertaCriticos()).thenReturn(false);
+        when(ia.getLimiteConsumo()).thenReturn(5000.0);
+        when(ia.getConsumoTotal()).thenReturn(3200.0);
+
+        String view = controller.index(model);
+
+        verify(model).addAttribute(eq("dispositivos"), eq(List.of()));
+        verify(model).addAttribute("alertaCriticos", false);
+        verify(model).addAttribute("limitePermitido", 5000.0);
+        verify(model).addAttribute("totalActual", 3200.0);
+
+        assertEquals("dashboard", view);
+    }
+
+    @Test
+    public void testGestionManual() {
+        String view = controller.gestionManual(model);
+        verify(model).addAttribute(eq("modoManual"), eq(true));
+        assertEquals("gestion", view);
+    }
+
+    @Test
+    public void testDesconectar() {
+        String result = controller.desconectar("tv");
+        verify(ia).desconectarDispositivo("tv");
+        assertEquals("redirect:/gestion", result);
+    }
+
+    @Test
+    public void testAjustarPotencia_Success() {
+        when(ia.ajustarPotenciaDispositivo("nevera", 1200)).thenReturn(true);
+        String result = controller.ajustarPotencia("nevera", 1200);
+        assertEquals("redirect:/gestion", result);
+    }
+
+    @Test
+    public void testAjustarPotencia_Failure() {
+        when(ia.ajustarPotenciaDispositivo("nevera", 8000)).thenReturn(false);
+        String result = controller.ajustarPotencia("nevera", 8000);
+        assertEquals("redirect:/gestion?error=No se pudo ajustar la potencia", result);
+    }
+}

@@ -5,11 +5,9 @@ import com.smartgrid.model.NivelCriticidad;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.*;
 
-/*class SmartGridDecisionEngineTest {
+class SmartGridDecisionEngineTest {
 
     private SmartGridDecisionEngine engine;
 
@@ -18,66 +16,86 @@ import static org.junit.jupiter.api.Assertions.*;
         engine = new SmartGridDecisionEngine();
     }
 
-    private Dispositivo crearDispositivo(String nombre, double consumo, NivelCriticidad criticidad) {
+    @Test
+    void testProcesarDispositivoDentroDelLimite() {
+        Dispositivo dispositivo = new Dispositivo();
+        dispositivo.setNombre("TV");
+        dispositivo.setCriticidad(NivelCriticidad.BAJA);
+        dispositivo.setConsumo(1000);
+
+        engine.procesarDispositivo(dispositivo);
+
+        assertFalse(engine.isAlertaCriticos());
+        assertEquals(1000, engine.getConsumoTotal());
+        assertEquals(1, engine.getDispositivosActivos().size());
+    }
+
+    @Test
+    void testDesconectaNoCriticosCuandoSeExcede() {
+        // Añadimos varios dispositivos
+        for (int i = 1; i <= 6; i++) {
+            Dispositivo d = new Dispositivo();
+            d.setNombre("Dispositivo" + i);
+            d.setCriticidad(NivelCriticidad.MEDIA);
+            d.setConsumo(1000);
+            engine.procesarDispositivo(d);
+        }
+
+        assertFalse(engine.isAlertaCriticos());
+        assertTrue(engine.getConsumoTotal() <= engine.getLimiteConsumo());
+    }
+
+    @Test
+    void testAlertaCuandoCriticosSuperanLimite() {
+        Dispositivo critico1 = new Dispositivo();
+        critico1.setNombre("Servidor");
+        critico1.setCriticidad(NivelCriticidad.CRITICA);
+        critico1.setConsumo(6000); // mayor que el límite
+
+        engine.procesarDispositivo(critico1);
+
+        assertTrue(engine.isAlertaCriticos());
+        assertEquals(6000, engine.getConsumoTotal());
+    }
+
+    @Test
+    void testAjustarPotenciaDispositivoCritico_Exito() {
+        Dispositivo critico = new Dispositivo();
+        critico.setNombre("Ventilador");
+        critico.setCriticidad(NivelCriticidad.CRITICA);
+        critico.setConsumo(6000); // Inicialmente muy alto
+
+        engine.procesarDispositivo(critico);
+
+        boolean result = engine.ajustarPotenciaDispositivo("Ventilador", 3000);
+        assertTrue(result);
+        assertFalse(engine.isAlertaCriticos());
+        assertTrue(engine.getConsumoTotal() <= engine.getLimiteConsumo());
+    }
+
+    @Test
+    void testAjustarPotenciaDispositivoCritico_Fallo() {
+        Dispositivo critico = new Dispositivo();
+        critico.setNombre("Refrigerador");
+        critico.setCriticidad(NivelCriticidad.CRITICA);
+        critico.setConsumo(6000);
+
+        engine.procesarDispositivo(critico);
+
+        boolean result = engine.ajustarPotenciaDispositivo("Refrigerador", 6000);
+        assertFalse(result);
+    }
+
+    @Test
+    void testDesconectarDispositivo() {
         Dispositivo d = new Dispositivo();
-        d.setNombre(nombre);
-        d.setConsumo(consumo);
-        d.setCriticidad(criticidad);
-        return d;
-    }
+        d.setNombre("Cafetera");
+        d.setCriticidad(NivelCriticidad.BAJA);
+        d.setConsumo(500);
 
-    @Test
-    void testConsumoDentroDelLimite_NoSeEliminaNada() {
-        engine.procesarDispositivo(crearDispositivo("tv", 1000, NivelCriticidad.MEDIA));
-        engine.procesarDispositivo(crearDispositivo("lampara", 500, NivelCriticidad.BAJA));
-
-        Map<String, Double> activos = engine.getDispositivosActivos();
-        assertEquals(2, activos.size());
-    }
-
-    @Test
-    void testConsumoExcedido_SeDesconectanNoCriticos() {
-        engine.procesarDispositivo(crearDispositivo("lavadora", 2500, NivelCriticidad.BAJA));
-        engine.procesarDispositivo(crearDispositivo("tv", 2000, NivelCriticidad.MEDIA));
-        engine.procesarDispositivo(crearDispositivo("horno", 1000, NivelCriticidad.CRITICA)); // Total: 5500W
-
-        Map<String, Double> activos = engine.getDispositivosActivos();
-        assertEquals(2, activos.size()); // Se debe haber eliminado al menos uno de los no críticos
-        assertTrue(activos.containsKey("horno"));
-    }
-
-    @Test
-    void testSoloCriticosSuperanLimite_NoSePuedeDesconectar() {
-        engine.procesarDispositivo(crearDispositivo("respirador", 3000, NivelCriticidad.CRITICA));
-        engine.procesarDispositivo(crearDispositivo("bomba de agua", 2500, NivelCriticidad.CRITICA)); // Total: 5500
-
-        Map<String, Double> activos = engine.getDispositivosActivos();
-        assertEquals(2, activos.size()); // No se puede eliminar nada
-        assertTrue(activos.containsKey("respirador"));
-    }
-
-    @Test
-    void testDesconectarJustoLoNecesario_HastaLimite() {
-        engine.procesarDispositivo(crearDispositivo("baja1", 400, NivelCriticidad.BAJA));
-        engine.procesarDispositivo(crearDispositivo("media1", 500, NivelCriticidad.MEDIA));
-        engine.procesarDispositivo(crearDispositivo("critico1", 4500, NivelCriticidad.CRITICA)); // Total: 5400
-
-        Map<String, Double> activos = engine.getDispositivosActivos();
-
-        // ✅ Solo debe quedar el crítico si es necesario eliminar más de uno
-        assertEquals(2, activos.size());
-        assertTrue(activos.containsKey("critico1"));
-    }
-
-
-    @Test
-    void testDesconexionManualFunciona() {
-        Dispositivo d = crearDispositivo("lavadora", 1000, NivelCriticidad.BAJA);
         engine.procesarDispositivo(d);
+        engine.desconectarDispositivo("Cafetera");
 
-        assertTrue(engine.getDispositivosActivos().containsKey("lavadora"));
-
-        engine.desconectarDispositivo("lavadora");
-        assertFalse(engine.getDispositivosActivos().containsKey("lavadora"));
+        assertTrue(engine.getDispositivosActivos().isEmpty());
     }
-}*/
+}

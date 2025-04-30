@@ -1,8 +1,11 @@
 package com.smartgrid.service;
 
+import com.smartgrid.analysis.EnergyAnomalyDetector;
 import com.smartgrid.config.MQTTConfig;
 import com.smartgrid.logic.SmartGridDecisionEngine;
+import com.smartgrid.model.Incidencia;
 import com.smartgrid.repository.DispositivoRepository;
+import com.smartgrid.repository.IncidenciaRepository;
 import jakarta.annotation.PreDestroy;
 import org.eclipse.paho.client.mqttv3.*;
 import org.slf4j.Logger;
@@ -36,18 +39,26 @@ public class MQTTSubscriberService {
     /** Para evitar inicializaciones múltiples si el contexto Spring recarga el bean */
     private boolean alreadyInitialized = false;
 
+    private final EnergyAnomalyDetector anomalyDetector;
+
+    private final IncidenciaRepository incidenciaRepository;
+
+
     /**
      * Constructor del servicio.
      *
-     * @param mqttConfig configuración del broker MQTT
-     * @param ia instancia del motor de decisiones
+     * @param mqttConfig            configuración del broker MQTT
+     * @param ia                    instancia del motor de decisiones
      * @param dispositivoRepository acceso a los dispositivos registrados
+     * @param anomalyDetector       detector de anomalias
      */
     @Autowired
-    public MQTTSubscriberService(MQTTConfig mqttConfig, SmartGridDecisionEngine ia, DispositivoRepository dispositivoRepository) {
+    public MQTTSubscriberService(MQTTConfig mqttConfig, SmartGridDecisionEngine ia, DispositivoRepository dispositivoRepository, EnergyAnomalyDetector anomalyDetector, IncidenciaRepository incidenciaRepository) {
         this.mqttConfig = mqttConfig;
         this.ia = ia;
         this.dispositivoRepository = dispositivoRepository;
+        this.anomalyDetector = anomalyDetector;
+        this.incidenciaRepository = incidenciaRepository;
     }
 
     /**
@@ -74,7 +85,12 @@ public class MQTTSubscriberService {
             // Conexión al broker y suscripción al topic
             client.connect(options);
             client.subscribe(topic, (topicSus, msg) -> {
-                procesarMensaje(new String(msg.getPayload())); // Callback para cada mensaje recibido
+                String payload = new String(msg.getPayload());
+                if (payload.startsWith("medicion:")) {
+                    procesarMedicion(payload);
+                } else {
+                    procesarMensaje(payload);
+                }
             });
 
             log.info("✅ Suscrito a MQTT broker en '{}', topic '{}'", brokerUrl, topic);
@@ -121,6 +137,55 @@ public class MQTTSubscriberService {
             dispositivo.setConsumo(consumo);
             ia.procesarDispositivo(dispositivo);
         }, () -> log.warn("❌ Dispositivo desconocido '{}'. Debe estar registrado.", nombre));
+    }
+
+    /**
+     * Procesa una medición energética del tipo "medicion:<tipo>:<valor>"
+     *
+     * @param payload mensaje MQTT recibido
+     */
+    private void procesarMedicion(String payload) {
+        String[] partes = payload.split(":");
+        if (partes.length != 3) {
+            log.warn("❌ Formato inválido para medición: '{}'", payload);
+            return;
+        }
+
+        String tipo = partes[1].trim().toLowerCase();
+        double valor;
+
+        try {
+            valor = Double.parseDouble(partes[2].trim());
+        } catch (NumberFormatException e) {
+            log.warn("❌ Valor de medición inválido: '{}'", partes[2]);
+            return;
+        }
+
+        switch (tipo) {
+            case "voltaje":
+                if (anomalyDetector.esOscilacionAnomala(valor)) {
+                    String desc = "Oscilación de voltaje detectada: " + valor + "V";
+                    log.warn("🚨 Oscilación de voltaje detectada: {}V", valor);
+
+                    incidenciaRepository.save(new Incidencia(desc, "ALTA"));
+                    // Acción automatizada ante oscilación: (comentada por ahora)
+                    /*
+                    List<Dispositivo> noCriticos = ia.getDispositivosActivos().stream()
+                        .filter(d -> d.getCriticidad() != NivelCriticidad.CRITICA)
+                        .toList();
+
+                    for (Dispositivo d : noCriticos) {
+                        ia.desconectarDispositivo(d.getNombre());
+                    }
+
+                    log.info("🔌 Dispositivos no críticos desconectados ante oscilación");
+                    */
+                }
+                break;
+
+            default:
+                log.info("ℹ️ Tipo de medición no reconocido aún: '{}'", tipo);
+        }
     }
 
     /**

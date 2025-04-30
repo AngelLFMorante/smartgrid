@@ -4,49 +4,158 @@
     <meta charset="UTF-8">
     <title>Smart Grid Dashboard</title>
     <style>
-        body { font-family: sans-serif; margin: 40px; }
-        table { border-collapse: collapse; width: 60%; }
-        th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-        th { background-color: #f2f2f2; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f7f9fb;
+            color: #333;
+        }
 
-        .alerta {
-            background-color: #ffdddd;
-            padding: 15px;
-            border: 1px solid red;
-            color: darkred;
-            margin-bottom: 20px;
+        /* Header y navegación */
+        header {
+            background-color: #004466;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
             font-weight: bold;
         }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Contenido principal */
+        main {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .alerta {
+            background-color: #ffe0e0;
+            border: 1px solid #ff4d4d;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .oscilaciones {
+            background-color: #fff4e0;
+            border: 1px solid #ffcc00;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            background-color: #004466;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #006699;
+        }
+
+        footer {
+            background-color: #f0f0f0;
+            text-align: center;
+            padding: 15px;
+            margin-top: 50px;
+            font-size: 14px;
+        }
+
     </style>
 </head>
 <body>
 
-<!-- ⚠️ Aviso cuando todos los dispositivos activos son críticos -->
-<!--<div th:if="${alertaCriticos}" class="alerta">
-    🚨 Todos los dispositivos activos son críticos. No es posible reducir más el consumo automáticamente.<br/>
-    Por favor, revise manualmente los dispositivos conectados o active un plan de emergencia.
-</div>-->
-<div th:if="${alertaCriticos}" style="background-color: #ffe0e0; border: 1px solid #ff4d4d; padding: 15px; margin-bottom: 20px;">
-    🚨 <strong>¡Atención!</strong> El consumo energético ha superado el límite y todos los dispositivos activos son críticos.
-    Por favor, realiza una desconexión manual desde la <a href="/gestion">gestión manual</a>.
-</div>
+<header>
+    <h1>Smart Grid Dashboard</h1>
+    <nav>
+        <a href="/">🏠 Inicio</a>
+        <a href="/gestion">🔧 Gestión Manual</a>
+        <a href="/incidencias">📋 Incidencias</a>
+    </nav>
+</header>
 
+<main>
 
-<h2>Dispositivos activos</h2>
-<table>
-    <tr>
-        <th>Nombre</th>
-        <th>Zona</th>
-        <th>Criticidad</th>
-        <th>Consumo (Watts)</th>
-    </tr>
-    <tr th:each="dispositivo : ${dispositivos}">
-        <td th:text="${dispositivo.nombre}"></td>
-        <td th:text="${dispositivo.zona}"></td>
-        <td th:text="${dispositivo.criticidad}"></td>
-        <td th:text="${dispositivo.consumo} + ' W'"></td>
-    </tr>
-</table>
+    <!-- Alerta por criticidad -->
+    <div th:if="${alertaCriticos}" class="alerta">
+        🚨 <strong>¡Atención!</strong> El consumo energético ha superado el límite y todos los dispositivos activos son críticos.
+        Por favor, realiza una desconexión manual desde la <a href="/gestion" style="color: #004466;">gestión manual</a>.
+    </div>
+
+    <!-- Oscilaciones recientes -->
+    <div th:if="${oscilaciones != null and !oscilaciones.isEmpty()}" class="oscilaciones">
+        <p>🔍 Se han detectado oscilaciones recientes de voltaje:</p>
+        <ul>
+            <li th:each="mensaje : ${oscilaciones}" th:text="${mensaje}"></li>
+        </ul>
+    </div>
+
+    <h2>📊 Dispositivos activos</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Zona</th>
+            <th>Criticidad</th>
+            <th>Consumo (Watts)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="dispositivo : ${dispositivos}">
+            <td th:text="${dispositivo.nombre}"></td>
+            <td th:text="${dispositivo.zona}"></td>
+            <td th:text="${dispositivo.criticidad}"></td>
+            <td th:text="${dispositivo.consumo} + ' W'"></td>
+        </tr>
+        </tbody>
+    </table>
+
+</main>
+
+<footer>
+    © 2025 SmartGrid Monitoring. Todos los derechos reservados.
+</footer>
 
 </body>
 </html>

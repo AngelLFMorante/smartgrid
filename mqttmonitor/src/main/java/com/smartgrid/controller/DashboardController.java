@@ -1,7 +1,9 @@
 package com.smartgrid.controller;
 
+import com.smartgrid.analysis.EnergyAnomalyDetector;
 import com.smartgrid.logic.SmartGridDecisionEngine;
 import com.smartgrid.logic.SmartGridService;
+import com.smartgrid.service.IncidenciaService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,22 +11,30 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * Controlador web que gestiona la visualización del dashboard principal
- * y la gestión manual de dispositivos.
+ * Controlador web que gestiona la visualización del dashboard principal,
+ * la gestión manual de dispositivos y la consulta del historial de incidencias.
  */
 @Controller
 public class DashboardController {
 
     private final SmartGridService servicio;
+    private final EnergyAnomalyDetector detector;
+    private final IncidenciaService incidenciaService;
 
     /**
-     * Constructor que recibe el motor de decisiones para interactuar
-     * con el estado energético actual y los dispositivos activos.
+     * Constructor que recibe el servicio principal de lógica de red,
+     * el detector de anomalías y el servicio de incidencias persistentes.
      *
-     * @param servicio instancia del motor de decisiones
+     * @param servicio          instancia del motor de decisiones y estado energético
+     * @param detector          componente de análisis de oscilaciones
+     * @param incidenciaService servicio para registrar y consultar incidencias
      */
-    public DashboardController(SmartGridService servicio) {
+    public DashboardController(SmartGridService servicio,
+                               EnergyAnomalyDetector detector,
+                               IncidenciaService incidenciaService) {
         this.servicio = servicio;
+        this.detector = detector;
+        this.incidenciaService = incidenciaService;
     }
 
     /**
@@ -41,6 +51,7 @@ public class DashboardController {
         model.addAttribute("alertaCriticos", servicio.hayAlertaCriticos());
         model.addAttribute("limitePermitido", servicio.getLimiteConsumo());
         model.addAttribute("totalActual", servicio.obtenerConsumoTotal());
+        model.addAttribute("oscilaciones", detector.getOscilacionesRecientes());
         return "dashboard";
     }
 
@@ -76,7 +87,7 @@ public class DashboardController {
      * Permite ajustar la potencia de un dispositivo crítico.
      * Si el consumo total sigue siendo mayor que el límite, no permitirá la salida.
      *
-     * @param nombre     nombre del dispositivo
+     * @param nombre        nombre del dispositivo
      * @param nuevaPotencia nueva potencia que se desea asignar
      * @return redirección a la página de gestión
      */
@@ -88,5 +99,17 @@ public class DashboardController {
         } else {
             return "redirect:/gestion?error=No se pudo ajustar la potencia";
         }
+    }
+
+    /**
+     * Muestra el historial de incidencias detectadas (oscilaciones persistidas).
+     *
+     * @param model modelo de datos para Thymeleaf
+     * @return nombre del template Thymeleaf (incidencias.html)
+     */
+    @GetMapping("/incidencias")
+    public String verHistorialIncidencias(Model model) {
+        model.addAttribute("incidencias", incidenciaService.obtenerTodas());
+        return "incidencias";
     }
 }

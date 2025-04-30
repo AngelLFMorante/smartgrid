@@ -1,9 +1,11 @@
 package com.smartgrid.service;
 
+import com.smartgrid.analysis.EnergyAnomalyDetector;
 import com.smartgrid.logic.SmartGridDecisionEngine;
 import com.smartgrid.model.Dispositivo;
 import com.smartgrid.model.NivelCriticidad;
 import com.smartgrid.repository.DispositivoRepository;
+import com.smartgrid.repository.IncidenciaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,12 +18,16 @@ class MQTTSubscriberServiceTest {
     private SmartGridDecisionEngine mockIa;
     private DispositivoRepository mockRepo;
     private MQTTSubscriberService service;
+    private EnergyAnomalyDetector anomalyDetector;
+    private IncidenciaRepository mockRepoIncidencia;
 
     @BeforeEach
     void setUp() {
         mockIa = mock(SmartGridDecisionEngine.class);
         mockRepo = mock(DispositivoRepository.class);
-        service = new MQTTSubscriberService(null, mockIa, mockRepo);
+        anomalyDetector = mock(EnergyAnomalyDetector.class);
+        mockRepoIncidencia = mock(IncidenciaRepository.class);
+        service = new MQTTSubscriberService(null, mockIa, mockRepo, anomalyDetector,mockRepoIncidencia);
     }
 
     @Test

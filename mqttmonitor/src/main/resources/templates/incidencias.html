@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial de Incidencias</title>
+    <link rel="stylesheet" href="/css/estilos.css"/>
+</head>
+<body>
+<h1>📋 Historial de Incidencias Detectadas</h1>
+
+<a href="/" style="text-decoration: none;">
+    🔙 Volver al Dashboard
+</a>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+    <tr>
+        <th>Fecha y Hora</th>
+        <th>Descripción</th>
+        <th>Severidad</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="incidencia : ${incidencias}">
+        <td th:text="${incidencia.fechaHora}"></td>
+        <td th:text="${incidencia.descripcion}"></td>
+        <td th:text="${incidencia.severidad}"></td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(incidencias)}">
+        <td colspan="3">✅ No hay incidencias registradas.</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

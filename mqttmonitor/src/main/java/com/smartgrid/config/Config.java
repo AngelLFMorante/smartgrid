@@ -1,7 +1,9 @@
 package com.smartgrid.config;
 
+import com.smartgrid.analysis.EnergyAnomalyDetector;
 import com.smartgrid.logic.SmartGridDecisionEngine;
 import com.smartgrid.repository.DispositivoRepository;
+import com.smartgrid.repository.IncidenciaRepository;
 import com.smartgrid.service.MQTTSubscriberService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,12 +21,19 @@ public class Config {
      *
      * @param mqttConfig configuración del cliente MQTT
      * @param ia motor de decisión de la smart grid
-     * @param repository repositorio JPA para acceder a los dispositivos
+     * @param dispositivoRepository repositorio JPA para acceder a los dispositivos
+     * @param incidenciaRepository respositorio JPA para accdeder a incidencias
      * @return instancia lista para usar de MQTTSubscriberService
      */
     @Bean
-    public MQTTSubscriberService mqttSubscriberService(MQTTConfig mqttConfig, SmartGridDecisionEngine ia, DispositivoRepository repository) {
-        return new MQTTSubscriberService(mqttConfig, ia, repository);
+    public MQTTSubscriberService mqttSubscriberService(
+            MQTTConfig mqttConfig,
+            SmartGridDecisionEngine ia,
+            DispositivoRepository dispositivoRepository,
+            EnergyAnomalyDetector anomalyDetector,
+            IncidenciaRepository incidenciaRepository
+    ) {
+        return new MQTTSubscriberService(mqttConfig, ia, dispositivoRepository, anomalyDetector,incidenciaRepository);
     }
 
     /**

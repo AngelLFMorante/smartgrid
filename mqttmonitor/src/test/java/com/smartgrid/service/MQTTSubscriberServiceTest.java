@@ -1,60 +1,55 @@
 package com.smartgrid.service;
 
 import com.smartgrid.logic.SmartGridDecisionEngine;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import com.smartgrid.model.Dispositivo;
+import com.smartgrid.model.NivelCriticidad;
+import com.smartgrid.repository.DispositivoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
 
 import static org.mockito.Mockito.*;
 
 class MQTTSubscriberServiceTest {
 
-    private MqttClient mockClient;
-    private SmartGridDecisionEngine mockEngine;
+    private SmartGridDecisionEngine mockIa;
+    private DispositivoRepository mockRepo;
+    private MQTTSubscriberService service;
 
     @BeforeEach
-    void setUp() throws MqttException {
-        mockClient = mock(MqttClient.class);
-        mockEngine = mock(SmartGridDecisionEngine.class);
+    void setUp() {
+        mockIa = mock(SmartGridDecisionEngine.class);
+        mockRepo = mock(DispositivoRepository.class);
+        service = new MQTTSubscriberService(null, mockIa, mockRepo);
     }
 
     @Test
-    void testReceivesValidMessageAndProcessesIt() throws Exception {
-        // Suplantamos comportamiento MQTT
-        MqttMessage mensaje = new MqttMessage("tv:3500".getBytes());
+    void testProcesaMensajeValido_DispositivoExistente() {
+        Dispositivo d = new Dispositivo();
+        d.setNombre("lavadora");
+        d.setCriticidad(NivelCriticidad.MEDIA);
 
-        MQTTSubscriberService service = new MQTTSubscriberService(mockEngine);
-
-        // Simular directamente la lógica de recepción (ya que init requiere broker real)
-        service.init(); // Si lo deseas puedes mockearlo, aquí solo para estructura
-
-        // Suplente: llamar a la lógica directamente
-        mockEngine.procesarConsumo("tv", 3500);
-
-        verify(mockEngine, times(1)).procesarConsumo("tv", 3500);
-    }
-
-    @Test
-    void testProcesarMensaje_Valido() {
-        SmartGridDecisionEngine mockIa = mock(SmartGridDecisionEngine.class);
-        MQTTSubscriberService service = new MQTTSubscriberService(mockIa);
+        when(mockRepo.findByNombre("lavadora")).thenReturn(Optional.of(d));
 
         service.procesarMensaje("lavadora:2100");
 
-        verify(mockIa, times(1)).procesarConsumo("lavadora", 2100.0);
+        verify(mockIa, times(1)).procesarDispositivo(d);
     }
-
 
     @Test
-    void testProcesarMensaje_Invalido() {
-        SmartGridDecisionEngine mockIa = mock(SmartGridDecisionEngine.class);
-        MQTTSubscriberService service = new MQTTSubscriberService(mockIa);
+    void testProcesaMensajeInvalido_NoProcesa() {
+        service.procesarMensaje("mensaje_erroneo");
 
-        service.procesarMensaje("invalido_sin_dos_partes");
-
-        verify(mockIa, never()).procesarConsumo(any(), anyDouble());
+        verify(mockIa, never()).procesarDispositivo(any());
     }
 
+    @Test
+    void testProcesaMensaje_DispositivoNoRegistrado() {
+        when(mockRepo.findByNombre("tv")).thenReturn(Optional.empty());
+
+        service.procesarMensaje("tv:1500");
+
+        verify(mockIa, never()).procesarDispositivo(any());
+    }
 }

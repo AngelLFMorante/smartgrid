@@ -1,33 +1,48 @@
 package com.smartgrid.config;
 
-import com.smartgrid.logic.SmartGridDecisionEngine;
-import com.smartgrid.service.MQTTSubscriberService;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
- * Configuración de beans relacionados con MQTT para inyección en Spring.
+ * Configuración del cliente MQTT, leída desde el archivo de propiedades.
+ * Contiene la URL del broker, el topic a suscribirse y el ID del cliente.
  */
-@Configuration
+@Component
 public class MQTTConfig {
 
+    @Value("${mqtt.broker.url}")
+    private String brokerUrl;
+
+    @Value("${mqtt.topic}")
+    private String topic;
+
+    @Value("${mqtt.client.id}")
+    private String clientId;
+
     /**
-     * Define el bean del servicio suscriptor MQTT para que Spring lo gestione.
+     * Obtiene la URL del broker MQTT.
      *
-     * @return una instancia de MQTTSubscriberService
+     * @return URL del broker
      */
-    @Bean
-    public MQTTSubscriberService mqttSubscriberService(SmartGridDecisionEngine ia) {
-        return new MQTTSubscriberService(ia);
+    public String getBrokerUrl() {
+        return brokerUrl;
     }
 
     /**
+     * Obtiene el topic al que se suscribe el cliente.
      *
-     * @return una instancia de SmartGridDecisionEngine
+     * @return nombre del topic
      */
-    @Bean
-    public SmartGridDecisionEngine decisionEngine() {
-        return new SmartGridDecisionEngine();
+    public String getTopic() {
+        return topic;
     }
 
+    /**
+     * Obtiene el identificador único del cliente MQTT.
+     *
+     * @return ID del cliente
+     */
+    public String getClientId() {
+        return clientId;
+    }
 }

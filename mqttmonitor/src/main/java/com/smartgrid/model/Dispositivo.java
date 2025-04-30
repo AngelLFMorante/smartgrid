@@ -1,9 +1,12 @@
 package com.smartgrid.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
- * Entidad JPA que representa un dispositivo de consumo energético.
+ * Entidad JPA que representa un dispositivo conectado al sistema de Smart Grid.
+ * Contiene información básica como nombre, zona, criticidad y consumo (transitorio).
  */
 @Entity
 @Table(name = "dispositivos")
@@ -13,24 +16,28 @@ public class Dispositivo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "El nombre no puede estar vacío.")
     private String nombre;
 
+    @NotBlank(message = "La zona no puede estar vacía.")
     private String zona;
 
     /**
-     * Nivel de criticidad del dispositivo.
-     * Determina si puede o no ser desconectado automáticamente.
+     * Nivel de criticidad del dispositivo: BAJA, MEDIA o CRITICA.
      */
+    @Enumerated(EnumType.STRING)
+    @NotNull(message = "La criticidad es obligatoria.")
     private NivelCriticidad criticidad;
 
     /**
      * Consumo actual del dispositivo (en Watts).
-     * Marcado como @Transient porque no se guarda en la base de datos.
+     * No se persiste en la base de datos.
      */
     @Transient
     private double consumo;
 
     // --- Getters y Setters ---
+
     public Long getId() {
         return id;
     }
@@ -55,14 +62,6 @@ public class Dispositivo {
         this.zona = zona;
     }
 
-    public double getConsumo() {
-        return consumo;
-    }
-
-    public void setConsumo(double consumo) {
-        this.consumo = consumo;
-    }
-
     public NivelCriticidad getCriticidad() {
         return criticidad;
     }
@@ -71,4 +70,11 @@ public class Dispositivo {
         this.criticidad = criticidad;
     }
 
+    public double getConsumo() {
+        return consumo;
+    }
+
+    public void setConsumo(double consumo) {
+        this.consumo = consumo;
+    }
 }

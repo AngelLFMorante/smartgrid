@@ -3,6 +3,7 @@ package com.smartgrid.service;
 import com.smartgrid.config.MQTTConfig;
 import com.smartgrid.logic.SmartGridDecisionEngine;
 import com.smartgrid.repository.DispositivoRepository;
+import jakarta.annotation.PreDestroy;
 import org.eclipse.paho.client.mqttv3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,6 +121,23 @@ public class MQTTSubscriberService {
             dispositivo.setConsumo(consumo);
             ia.procesarDispositivo(dispositivo);
         }, () -> log.warn("❌ Dispositivo desconocido '{}'. Debe estar registrado.", nombre));
+    }
+
+    /**
+     * Cierra la conexión MQTT de forma segura al finalizar la aplicación.
+     * Esto se ejecuta automáticamente cuando el contenedor de Spring destruye el bean.
+     */
+    @PreDestroy
+    public void cerrarConexion() {
+        if (client != null && client.isConnected()) {
+            try {
+                client.disconnect();
+                client.close(); // Cierra también el socket
+                log.info("🔌 Conexión MQTT cerrada correctamente.");
+            } catch (MqttException e) {
+                log.warn("⚠️ Error al cerrar la conexión MQTT: {}", e.getMessage(), e);
+            }
+        }
     }
 
 }

@@ -25,7 +25,7 @@ public class Dispositivo {
     /**
      * Nivel de criticidad del dispositivo: BAJA, MEDIA o CRITICA.
      */
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.ORDINAL)
     @NotNull(message = "La criticidad es obligatoria.")
     private NivelCriticidad criticidad;
 

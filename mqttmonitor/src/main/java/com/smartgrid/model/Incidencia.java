@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
  * Entidad que representa una incidencia detectada en la red, como una oscilación de voltaje.
  */
 @Entity
+@Table(name = "incidencias")
 public class Incidencia {
 
     @Id

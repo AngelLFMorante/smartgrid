@@ -44,7 +44,7 @@
         <td>
             <!-- 🔌 Apagar si no es crítico o si está permitido por exceso -->
             <form th:action="@{/desconectar}" method="post"
-                  th:if="${dispositivo.criticidad.name() != 'CRITICA'
+                  th:if="${dispositivo.criticidad != 'CRITICA'
                           or (modoManual and totalActual > limitePermitido)}">
                 <input type="hidden" name="nombre" th:value="${dispositivo.nombre}" />
                 <button type="submit">🔌 Apagar</button>
@@ -52,7 +52,7 @@
 
             <!-- 🔧 Formulario para bajar potencia si es crítico y hay exceso -->
             <form th:action="@{/ajustar-potencia}" method="post"
-                  th:if="${dispositivo.criticidad.name() == 'CRITICA' and modoManual and totalActual > limitePermitido}">
+                  th:if="${dispositivo.criticidad == 'CRITICA' and modoManual and totalActual > limitePermitido}">
                 <input type="hidden" name="nombre" th:value="${dispositivo.nombre}" />
                 <input type="number" name="nuevaPotencia" min="1"
                        th:placeholder="'Reducir de ' + ${dispositivo.consumo} + 'W'" />
@@ -60,7 +60,7 @@
             </form>
 
             <!-- ❌ Si es crítico y no se puede actuar -->
-            <span th:if="${dispositivo.criticidad.name() == 'CRITICA'
+            <span th:if="${dispositivo.criticidad == 'CRITICA'
                           and (!modoManual or totalActual <= limitePermitido)}">
                 No disponible
             </span>

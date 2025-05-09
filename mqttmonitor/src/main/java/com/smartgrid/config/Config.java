@@ -32,9 +32,17 @@ public class Config {
             SmartGridDecisionEngine ia,
             DispositivoRepository dispositivoRepository,
             EnergyAnomalyDetector anomalyDetector,
-            IncidenciaRepository incidenciaRepository
+            IncidenciaRepository incidenciaRepository,
+            MedicionService medicionService
     ) {
-        return new MQTTSubscriberService(mqttConfig, ia, dispositivoRepository, anomalyDetector,incidenciaRepository);
+        return new MQTTSubscriberService(
+                mqttConfig,
+                ia,
+                dispositivoRepository,
+                anomalyDetector,
+                incidenciaRepository,
+                medicionService
+        );
     }
 
     /**

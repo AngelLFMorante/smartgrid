@@ -17,6 +17,10 @@ import java.util.*;
  */
 public class SmartGridDecisionEngine {
 
+    //TODO hay que controlar cuando se setean los datos al bajar el consumo
+    // tambien hay que controlar las oscilaciones para que sean reales a parte que se quede informado
+    // Hay que implementar forecast del link mas la IA para sacar los analisis segun balance de consumo registrado
+
     private static final Logger log = LoggerFactory.getLogger(SmartGridDecisionEngine.class);
 
     // Límite de consumo total permitido en Watts

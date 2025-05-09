@@ -2,6 +2,7 @@ package com.smartgrid.logic;
 
 import com.smartgrid.model.Dispositivo;
 import com.smartgrid.model.NivelCriticidad;
+import com.smartgrid.service.MedicionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -10,10 +11,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class SmartGridDecisionEngineTest {
 
     private SmartGridDecisionEngine engine;
+    private MedicionService medicionService;
 
     @BeforeEach
     void setUp() {
-        engine = new SmartGridDecisionEngine();
+        engine = new SmartGridDecisionEngine(medicionService);
     }
 
     @Test

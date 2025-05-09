@@ -43,6 +43,8 @@ public class MQTTSubscriberService {
 
     private final IncidenciaRepository incidenciaRepository;
 
+    private final MedicionService medicionService;
+
 
     /**
      * Constructor del servicio.
@@ -53,12 +55,13 @@ public class MQTTSubscriberService {
      * @param anomalyDetector       detector de anomalias
      */
     @Autowired
-    public MQTTSubscriberService(MQTTConfig mqttConfig, SmartGridDecisionEngine ia, DispositivoRepository dispositivoRepository, EnergyAnomalyDetector anomalyDetector, IncidenciaRepository incidenciaRepository) {
+    public MQTTSubscriberService(MQTTConfig mqttConfig, SmartGridDecisionEngine ia, DispositivoRepository dispositivoRepository, EnergyAnomalyDetector anomalyDetector, IncidenciaRepository incidenciaRepository, MedicionService medicionService) {
         this.mqttConfig = mqttConfig;
         this.ia = ia;
         this.dispositivoRepository = dispositivoRepository;
         this.anomalyDetector = anomalyDetector;
         this.incidenciaRepository = incidenciaRepository;
+        this.medicionService = medicionService;
     }
 
     /**
@@ -136,6 +139,8 @@ public class MQTTSubscriberService {
         dispositivoRepository.findByNombre(nombre).ifPresentOrElse(dispositivo -> {
             dispositivo.setConsumo(consumo);
             ia.procesarDispositivo(dispositivo);
+            // ✅ Registrar inmediatamente
+            medicionService.registrar(dispositivo.getNombre(), consumo);
         }, () -> log.warn("❌ Dispositivo desconocido '{}'. Debe estar registrado.", nombre));
     }
 

@@ -34,8 +34,16 @@ public class ConfigTest {
         DispositivoRepository repository = mock(DispositivoRepository.class);
         EnergyAnomalyDetector energyAnomalyDetector = mock(EnergyAnomalyDetector.class);
         IncidenciaRepository incidencia = mock(IncidenciaRepository.class);
+        MedicionService medicionService = mock(MedicionService.class);
 
-        MQTTSubscriberService service = config.mqttSubscriberService(mqttConfig, engine, repository, energyAnomalyDetector, incidencia);
+        MQTTSubscriberService service = config.mqttSubscriberService(
+                mqttConfig,
+                engine,
+                repository,
+                energyAnomalyDetector,
+                incidencia,
+                medicionService
+        );
 
         assertNotNull(service, "El bean MQTTSubscriberService no debe ser null");
     }

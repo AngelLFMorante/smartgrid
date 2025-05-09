@@ -25,7 +25,7 @@ public class RegistroMedicionesScheduler {
         });
     }
 
-    @Scheduled(cron = "0 0 0 1 * *") // limpieza el día 1 de cada mes
+    @Scheduled(cron = "0 0 3 * * *")// cada día a las 3 AM
     public void eliminarAntiguas() {
         medicionService.eliminarAntiguas();
     }

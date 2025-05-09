@@ -27,5 +27,37 @@ public class Medicion {
     }
 
     // Getters y Setters
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getNombreDispositivo() {
+        return nombreDispositivo;
+    }
+
+    public void setNombreDispositivo(String nombreDispositivo) {
+        this.nombreDispositivo = nombreDispositivo;
+    }
+
+    public double getConsumo() {
+        return consumo;
+    }
+
+    public void setConsumo(double consumo) {
+        this.consumo = consumo;
+    }
+
+    public LocalDateTime getFechaHora() {
+        return fechaHora;
+    }
+
+    public void setFechaHora(LocalDateTime fechaHora) {
+        this.fechaHora = fechaHora;
+    }
 }
 

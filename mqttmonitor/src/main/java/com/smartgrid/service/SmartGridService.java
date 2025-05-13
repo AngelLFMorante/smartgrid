@@ -1,6 +1,7 @@
-package com.smartgrid.logic;
+package com.smartgrid.service;
 
 import com.smartgrid.dto.DispositivoDTO;
+import com.smartgrid.logic.SmartGridDecisionEngine;
 import com.smartgrid.model.Dispositivo;
 import org.springframework.stereotype.Service;
 

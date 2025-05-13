@@ -1,8 +1,7 @@
 package com.smartgrid.controller;
 
 import com.smartgrid.analysis.EnergyAnomalyDetector;
-import com.smartgrid.logic.SmartGridDecisionEngine;
-import com.smartgrid.logic.SmartGridService;
+import com.smartgrid.service.SmartGridService;
 import com.smartgrid.service.IncidenciaService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

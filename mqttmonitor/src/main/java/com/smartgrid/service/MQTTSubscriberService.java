@@ -3,10 +3,12 @@ package com.smartgrid.service;
 import com.smartgrid.analysis.EnergyAnomalyDetector;
 import com.smartgrid.config.MQTTConfig;
 import com.smartgrid.logic.SmartGridDecisionEngine;
+import com.smartgrid.model.Dispositivo;
 import com.smartgrid.model.Incidencia;
 import com.smartgrid.repository.DispositivoRepository;
 import com.smartgrid.repository.IncidenciaRepository;
 import jakarta.annotation.PreDestroy;
+import java.util.List;
 import org.eclipse.paho.client.mqttv3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -173,23 +175,47 @@ public class MQTTSubscriberService {
                     log.warn("🚨 Oscilación de voltaje detectada: {}V", valor);
 
                     incidenciaRepository.save(new Incidencia(desc, "ALTA"));
-                    // Acción automatizada ante oscilación: (comentada por ahora)
-                    /*
-                    List<Dispositivo> noCriticos = ia.getDispositivosActivos().stream()
-                        .filter(d -> d.getCriticidad() != NivelCriticidad.CRITICA)
-                        .toList();
 
-                    for (Dispositivo d : noCriticos) {
-                        ia.desconectarDispositivo(d.getNombre());
+                    List<Dispositivo> dispositivosActivos = ia.getDispositivosActivos();
+
+                    for (Dispositivo d : dispositivosActivos) {
+                        double consumo = d.getConsumo();
+
+                        if (valor > consumo) {
+                            // Se apaga el dispositivo porque la oscilación es superior a su consumo
+                            ia.desconectarDispositivo(d.getNombre());
+                            log.info("⚠️ Dispositivo '{}' desconectado preventivamente: oscilación {}V > consumo {}W",
+                                    d.getNombre(), valor, consumo);
+                        } else {
+                            // Se reduce temporalmente el consumo
+                            double nuevoConsumo = consumo - valor;
+                            log.info("📉 Reducción temporal para '{}': {}W → {}W (durante 3 segundos)",
+                                    d.getNombre(), consumo, nuevoConsumo);
+
+                            // Registrar consumo reducido
+                            medicionService.registrar(d.getNombre(), nuevoConsumo);
+
+                            // Aplicar reducción y luego restaurar tras 3 segundos
+                            double consumoOriginal = consumo;
+                            d.setConsumo(nuevoConsumo);
+
+                            new Thread(() -> {
+                                try {
+                                    Thread.sleep(3000); // Esperar 3 segundos
+                                    d.setConsumo(consumoOriginal);
+                                    // Registrar restauración
+                                    medicionService.registrar(d.getNombre(), consumoOriginal);
+                                    log.info("✅ Consumo restaurado para '{}': {}W", d.getNombre(), consumoOriginal);
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                    log.error("❌ Error al restaurar consumo para '{}'", d.getNombre(), e);
+                                }
+                            }).start();
+                        }
                     }
-
-                    log.info("🔌 Dispositivos no críticos desconectados ante oscilación");
-                    */
                 }
                 break;
 
-            default:
-                log.info("ℹ️ Tipo de medición no reconocido aún: '{}'", tipo);
         }
     }
 

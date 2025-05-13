@@ -11,48 +11,24 @@ import java.util.*;
 /**
  * Motor de decisiones que gestiona los dispositivos conectados
  * en función del consumo energético y su nivel de criticidad.
- *
- * Esta clase no está anotada con @Component y debe ser registrada manualmente
- * como un bean en la configuración de Spring para permitir la inyección de dependencias.
  */
 public class SmartGridDecisionEngine {
 
-    //TODO hay que controlar cuando se setean los datos al bajar el consumo
-    // tambien hay que controlar las oscilaciones para que sean reales a parte que se quede informado
-    // Hay que implementar forecast del link mas la IA para sacar los analisis segun balance de consumo registrado
-
     private static final Logger log = LoggerFactory.getLogger(SmartGridDecisionEngine.class);
 
-    // Límite de consumo total permitido en Watts
     private final double limiteConsumo = 5000.0;
-
-    // Dispositivos activos actualmente (nombre -> dispositivo)
     private final Map<String, Dispositivo> dispositivosActivos = new HashMap<>();
-
-    // Servicio de registro de mediciones
     private final MedicionService medicionService;
 
-    // Estado de alerta: true si hay solo dispositivos críticos activos y aún se supera el límite
     private boolean alertaCriticos = false;
 
-    /**
-     * Constructor principal del motor de decisiones.
-     *
-     * @param medicionService Servicio de mediciones para registrar el consumo de los dispositivos
-     */
     public SmartGridDecisionEngine(MedicionService medicionService) {
         this.medicionService = medicionService;
     }
 
-    /**
-     * Procesa un nuevo dispositivo o actualización, y toma decisiones
-     * sobre su conexión basada en el consumo total del sistema.
-     *
-     * @param dispositivo Dispositivo con datos actualizados
-     */
     public void procesarDispositivo(Dispositivo dispositivo) {
         dispositivosActivos.put(dispositivo.getNombre(), dispositivo);
-        alertaCriticos = false; // Reiniciar estado de alerta
+        alertaCriticos = false;
 
         double consumoTotal = getConsumoTotal();
 
@@ -63,7 +39,6 @@ public class SmartGridDecisionEngine {
 
         log.warn("⚠️ Consumo excedido: {}W > {}W", consumoTotal, limiteConsumo);
 
-        // Separar dispositivos por criticidad
         List<Dispositivo> criticos = new ArrayList<>();
         List<Dispositivo> noCriticos = new ArrayList<>();
 
@@ -75,7 +50,6 @@ public class SmartGridDecisionEngine {
             }
         }
 
-        // Ordenar no críticos por mayor consumo
         noCriticos.sort(Comparator.comparingDouble(Dispositivo::getConsumo).reversed());
 
         double consumoCriticos = criticos.stream()
@@ -90,7 +64,6 @@ public class SmartGridDecisionEngine {
             return;
         }
 
-        // Desconectar dispositivos no críticos hasta ajustar el consumo
         double consumoActual = consumoTotal;
         List<String> desconectados = new ArrayList<>();
 
@@ -113,12 +86,6 @@ public class SmartGridDecisionEngine {
         }
     }
 
-    /**
-     * Desconecta un dispositivo manualmente por nombre.
-     * También registra una medición de consumo 0.
-     *
-     * @param nombre Nombre del dispositivo a desconectar
-     */
     public void desconectarDispositivo(String nombre) {
         Dispositivo dispositivo = dispositivosActivos.get(nombre);
         if (dispositivo != null) {
@@ -126,13 +93,6 @@ public class SmartGridDecisionEngine {
         }
     }
 
-    /**
-     * Ajusta la potencia de un dispositivo crítico, si es posible.
-     *
-     * @param nombre        Nombre del dispositivo
-     * @param nuevaPotencia Nueva potencia a aplicar
-     * @return true si se pudo ajustar, false si se revierte por sobrepasar el límite
-     */
     public boolean ajustarPotenciaDispositivo(String nombre, double nuevaPotencia) {
         Dispositivo dispositivo = dispositivosActivos.get(nombre);
 
@@ -147,61 +107,35 @@ public class SmartGridDecisionEngine {
 
         if (consumoTotal <= limiteConsumo) {
             alertaCriticos = false;
+            medicionService.registrar(dispositivo.getNombre(), nuevaPotencia);
             log.info("🔧 Potencia ajustada para '{}' a {}W", nombre, nuevaPotencia);
             log.info("✅ Consumo dentro del límite: {}W / {}W", consumoTotal, limiteConsumo);
             return true;
         }
 
-        // Revertir si excede el límite
         dispositivo.setConsumo(potenciaAnterior);
         log.warn("⚠️ No se pudo ajustar potencia de '{}' a {}W. Excede el límite.", nombre, nuevaPotencia);
         return false;
     }
 
-    /**
-     * Devuelve la lista de dispositivos actualmente activos.
-     *
-     * @return Lista de dispositivos activos
-     */
     public List<Dispositivo> getDispositivosActivos() {
         return new ArrayList<>(dispositivosActivos.values());
     }
 
-    /**
-     * Devuelve el consumo total actual del sistema.
-     *
-     * @return Consumo total en Watts
-     */
     public double getConsumoTotal() {
         return dispositivosActivos.values().stream()
                 .mapToDouble(Dispositivo::getConsumo)
                 .sum();
     }
 
-    /**
-     * Indica si hay una alerta activa por exceso de consumo con solo dispositivos críticos.
-     *
-     * @return true si hay alerta, false en caso contrario
-     */
     public boolean isAlertaCriticos() {
         return alertaCriticos;
     }
 
-    /**
-     * Devuelve el límite de consumo configurado.
-     *
-     * @return Límite en Watts
-     */
     public double getLimiteConsumo() {
         return limiteConsumo;
     }
 
-    /**
-     * Desconecta el dispositivo y registra una medición de 0W para su consumo.
-     * Se asegura de que se registre solo una vez.
-     *
-     * @param dispositivo Dispositivo a desconectar
-     */
     private void desconectarYRegistrar(Dispositivo dispositivo) {
         dispositivosActivos.remove(dispositivo.getNombre());
         log.info("🛑 Dispositivo '{}' desconectado", dispositivo.getNombre());
@@ -209,5 +143,41 @@ public class SmartGridDecisionEngine {
         if (medicionService != null) {
             medicionService.registrar(dispositivo.getNombre(), 0.0);
         }
+    }
+
+    /**
+     * Aplica una oscilación de consumo negativa temporal a todos los dispositivos activos.
+     * Después de 3 segundos, los valores originales se restauran automáticamente.
+     *
+     * @param variacion Cantidad en watts a restar temporalmente del consumo
+     */
+    public void aplicarOscilacionTemporal(double variacion) {
+        if (variacion <= 0) return;
+
+        Map<String, Double> consumoOriginal = new HashMap<>();
+        log.warn("⚡ Aplicando oscilación temporal de -{}W a todos los dispositivos", variacion);
+
+        for (Dispositivo d : dispositivosActivos.values()) {
+            double original = d.getConsumo();
+            consumoOriginal.put(d.getNombre(), original);
+
+            double ajustado = Math.max(0.0, original - variacion);
+            d.setConsumo(ajustado);
+            medicionService.registrar(d.getNombre(), ajustado);
+        }
+
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                for (Dispositivo d : dispositivosActivos.values()) {
+                    Double original = consumoOriginal.get(d.getNombre());
+                    if (original != null) {
+                        d.setConsumo(original);
+                        medicionService.registrar(d.getNombre(), original);
+                    }
+                }
+                log.info("🔄 Oscilación finalizada. Valores restaurados tras 3 segundos.");
+            }
+        }, 3000); // 3 segundos
     }
 }

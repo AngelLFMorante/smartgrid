@@ -9,6 +9,8 @@ import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
 
 import com.smartgrid.repository.MedicionRepository;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -45,7 +47,8 @@ public class PrediccionIAService {
             Criteria<NDArray, NDArray> criteria = Criteria.builder()
                     .setTypes(NDArray.class, NDArray.class)
                     .optEngine("PyTorch")
-                    .optModelUrls("https://resources.djl.ai/test-models/pytorch/m5forecast/m5forecast.zip")
+                    .optModelPath(Paths.get(getClass().getClassLoader().getResource("model/lstm_model.pt").toURI()).getParent())
+                    .optModelName("lstm_model")
                     .build();
 
             try (Predictor<NDArray, NDArray> predictor = ModelZoo.loadModel(criteria).newPredictor()) {
@@ -57,6 +60,8 @@ public class PrediccionIAService {
                 System.arraycopy(prediccion, 0, resultadoFinal, 0, Math.min(pasos, prediccion.length));
                 return resultadoFinal;
             }
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 }

@@ -3,6 +3,7 @@ package com.smartgrid.logic;
 import com.smartgrid.model.Dispositivo;
 import com.smartgrid.model.NivelCriticidad;
 import com.smartgrid.service.MedicionService;
+import com.smartgrid.service.PrediccionIAService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,16 +20,32 @@ public class SmartGridDecisionEngine {
     private final double limiteConsumo = 5000.0;
     private final Map<String, Dispositivo> dispositivosActivos = new HashMap<>();
     private final MedicionService medicionService;
+    private final PrediccionIAService prediccionIAService;
 
     private boolean alertaCriticos = false;
 
-    public SmartGridDecisionEngine(MedicionService medicionService) {
+    public SmartGridDecisionEngine(MedicionService medicionService, PrediccionIAService prediccionIAService) {
         this.medicionService = medicionService;
+        this.prediccionIAService = prediccionIAService;
     }
 
     public void procesarDispositivo(Dispositivo dispositivo) {
         dispositivosActivos.put(dispositivo.getNombre(), dispositivo);
         alertaCriticos = false;
+
+        // Registrar medición en la base de datos
+        medicionService.registrar(dispositivo.getNombre(), dispositivo.getConsumo());
+
+        // ✅ Lanzar predicción IA real
+        try {
+            double[] prediccion = prediccionIAService.predecirConsumo(5);
+            log.info("🔮 Predicción de consumo total para los próximos 5 minutos:");
+            for (int i = 0; i < prediccion.length; i++) {
+                log.info("    ➤ Minuto +{} → {:.2f}W", i + 1, prediccion[i]);
+            }
+        } catch (Exception e) {
+            log.warn("❌ No se pudo realizar la predicción: {}", e.getMessage());
+        }
 
         double consumoTotal = getConsumoTotal();
 

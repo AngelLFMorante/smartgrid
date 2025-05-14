@@ -6,6 +6,7 @@ import com.smartgrid.repository.DispositivoRepository;
 import com.smartgrid.repository.IncidenciaRepository;
 import com.smartgrid.service.MQTTSubscriberService;
 import com.smartgrid.service.MedicionService;
+import com.smartgrid.service.PrediccionIAService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -51,7 +52,7 @@ public class Config {
      * @return nueva instancia de SmartGridDecisionEngine
      */
     @Bean
-    public SmartGridDecisionEngine decisionEngine(MedicionService medicionService) {
-        return new SmartGridDecisionEngine(medicionService);
+    public SmartGridDecisionEngine decisionEngine(MedicionService medicionService, PrediccionIAService prediccionIAService) {
+        return new SmartGridDecisionEngine(medicionService, prediccionIAService);
     }
 }

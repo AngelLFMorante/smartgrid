@@ -6,6 +6,7 @@ import com.smartgrid.repository.DispositivoRepository;
 import com.smartgrid.repository.IncidenciaRepository;
 import com.smartgrid.service.MQTTSubscriberService;
 import com.smartgrid.service.MedicionService;
+import com.smartgrid.service.PrediccionIAService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
@@ -17,10 +18,13 @@ public class ConfigTest {
     @Mock
     MedicionService medicionService;
 
+    @Mock
+    PrediccionIAService prediccionIAService;
+
     @Test
     public void testDecisionEngineBean() {
         Config config = new Config();
-        SmartGridDecisionEngine engine = config.decisionEngine(medicionService);
+        SmartGridDecisionEngine engine = config.decisionEngine(medicionService, prediccionIAService);
 
         assertNotNull(engine, "El bean SmartGridDecisionEngine no debe ser null");
     }

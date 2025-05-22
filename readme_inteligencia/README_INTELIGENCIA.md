@@ -43,7 +43,7 @@ smartgrid/
 
 ## 🧪 Cómo se entrenó el modelo
 
-1. Se descargó desde GitHub o Kaggle el siguiente proyecto en Jupyter:
+1. Se descargó desde GitHub o Kaggle el siguiente proyecto en Jupyter: https://github.com/iamirmasoud/energy_consumption_prediction.git
 
 ```
 Nombre del notebook: Energy consumption prediction using LSTM-GRU in PyTorch.ipynb

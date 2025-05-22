@@ -4,6 +4,9 @@ import com.smartgrid.model.Dispositivo;
 import com.smartgrid.model.NivelCriticidad;
 import com.smartgrid.service.MedicionService;
 import com.smartgrid.service.PrediccionIAService;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,11 +41,44 @@ public class SmartGridDecisionEngine {
 
         // ✅ Lanzar predicción IA real
         try {
-            double[] prediccion = prediccionIAService.predecirConsumo(5);
-            log.info("🔮 Predicción de consumo total para los próximos 5 minutos:");
-            for (int i = 0; i < prediccion.length; i++) {
-                log.info("    ➤ Minuto +{} → {:.2f}W", i + 1, prediccion[i]);
+            double[] prediccion = prediccionIAService.predecirConsumoProximoBloque(5);
+
+            // Cada valor es por minuto → multiplicamos por 60 minutos para obtener estimado por hora
+            double[] prediccionHora = Arrays.stream(prediccion)
+                    .map(p -> p * 60.0) // ← de W/min a Wh
+                    .toArray();
+
+            double mediaWh = Arrays.stream(prediccionHora).average().orElse(0.0);
+            double picoWh = Arrays.stream(prediccionHora).max().orElse(0.0);
+
+            // 🔁 CONVERSIÓN: pasamos límite de W a Wh para comparación justa
+            double limiteConsumoWh = limiteConsumo * 60.0;
+
+            log.info("🔮 Predicción para la próxima hora: media ≈ {} Wh, pico estimado de {} Wh para las ({}).",
+                    String.format("%.2f", mediaWh),
+                    String.format("%.2f", picoWh),
+                    LocalDateTime.now().plusHours(1).format(DateTimeFormatter.ofPattern("HH:mm"))
+            );
+
+            // Buscar minuto donde ocurre el pico de consumo
+            int minutoPico = 0;
+            for (int i = 0; i < prediccionHora.length; i++) {
+                if (prediccionHora[i] == picoWh) {
+                    minutoPico = i + 1;
+                    break;
+                }
             }
+
+            // Comparar pico estimado por hora con el límite en Wh
+            if (picoWh > limiteConsumoWh) {
+                log.warn("⚠️ Se espera que el consumo supere el límite de {} Wh en los próximos minutos.", (int) limiteConsumoWh);
+                log.warn("📌 Recomendación: revisar uso de dispositivos no críticos antes de las {}.",
+                        LocalDateTime.now().plusMinutes(minutoPico).format(DateTimeFormatter.ofPattern("HH:mm"))
+                );
+            } else {
+                log.info("✅ Consumo dentro del límite: {}W", limiteConsumo); // Mensaje opcional
+            }
+
         } catch (Exception e) {
             log.warn("❌ No se pudo realizar la predicción: {}", e.getMessage());
         }

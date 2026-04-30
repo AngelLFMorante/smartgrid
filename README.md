@@ -137,4 +137,3 @@ Se propone una arquitectura de **Microservicios con Hexagonal Architecture** (pu
 
 Ángel Luis Fernández Morante  
 Desarrollador Backend Java  
-Plexus Tech
